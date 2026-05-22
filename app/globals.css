@@ -1,0 +1,228 @@
+/* Design tokens: switch `html[data-theme="light"|"dark"]` (see `AppThemeProvider` + `themeInitScript`).
+   New UI should use semantic Tailwind (`bg-surface`, `text-heading`, `text-fg-muted`, `ui-field`, …)
+   or `var(--*)` from this file — avoid hard-coded slate/white unless for one-off accents. */
+@layer theme, base, mui, components, utilities;
+
+@import "tailwindcss";
+
+@custom-variant dark (html[data-theme="dark"] &);
+
+:root {
+  color-scheme: light;
+  --background: #eef2f6;
+  --dashboard-canvas: #eef2f6;
+  --foreground: #0f172a;
+  --text-heading: #0f172a;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --brand-primary: #007076;
+  --brand-primary-dark: #00393d;
+  --brand-secondary: #003399;
+  --brand-secondary-light: #0052cc;
+  --brand-accent: #e63535;
+  --brand-border: #e2e8f0;
+  --brand-muted: #475569;
+  --brand-surface: #ffffff;
+  --ring-focus: color-mix(in oklab, var(--brand-primary) 45%, transparent);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --shell-sidebar-w: 280px;
+  --shell-header-h: 64px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 18px rgba(15, 23, 42, 0.045);
+  --shadow-card-hover: 0 2px 4px rgba(15, 23, 42, 0.06), 0 8px 22px rgba(15, 23, 42, 0.06);
+  --elevated: #f1f5f9;
+  --chrome: #ffffff;
+  --chrome-hover: #f8fafc;
+  --input-bg: rgba(248, 250, 252, 0.95);
+  --input-border: rgba(226, 232, 240, 0.95);
+  --header-bg: rgba(255, 255, 255, 0.92);
+  --header-border: rgba(226, 232, 240, 0.95);
+  --header-line: rgba(15, 23, 42, 0.04);
+  --table-header-bg: #f8fafc;
+  --table-row-hover: rgba(248, 250, 252, 0.95);
+  --table-divider: #f1f5f9;
+  --auth-blob-a: rgba(0, 112, 118, 0.14);
+  --auth-blob-b: rgba(0, 51, 153, 0.12);
+  --auth-grid-opacity: 0.045;
+  --auth-grid-stroke: #0f172a;
+  --auth-panel-bg: rgba(255, 255, 255, 0.94);
+  --auth-panel-border: rgba(15, 23, 42, 0.1);
+  --auth-panel-shadow: 0 24px 80px -28px rgba(15, 23, 42, 0.14);
+  --auth-radial: radial-gradient(ellipse 70% 50% at 78% 18%, color-mix(in oklab, var(--brand-primary) 12%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 42% at 18% 82%, color-mix(in oklab, var(--brand-secondary) 8%, transparent), transparent 50%);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0c0f14;
+  --dashboard-canvas: #0e1218;
+  --foreground: #e8eef5;
+  --text-heading: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  --brand-border: #2a3444;
+  --brand-muted: #94a3b8;
+  --brand-surface: #141c26;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-card-hover: 0 2px 6px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.28);
+  --elevated: #1a2332;
+  --chrome: #1a2332;
+  --chrome-hover: #223043;
+  --input-bg: rgba(30, 41, 59, 0.55);
+  --input-border: rgba(51, 65, 85, 0.65);
+  --header-bg: rgba(15, 23, 42, 0.9);
+  --header-border: rgba(51, 65, 85, 0.55);
+  --header-line: rgba(148, 163, 184, 0.12);
+  --table-header-bg: rgba(15, 23, 42, 0.75);
+  --table-row-hover: rgba(30, 41, 59, 0.45);
+  --table-divider: rgba(51, 65, 85, 0.45);
+  --auth-blob-a: rgba(0, 112, 118, 0.2);
+  --auth-blob-b: rgba(0, 51, 153, 0.32);
+  --auth-grid-opacity: 0.07;
+  --auth-grid-stroke: #ffffff;
+  --auth-panel-bg: rgba(255, 255, 255, 0.045);
+  --auth-panel-border: rgba(255, 255, 255, 0.1);
+  --auth-panel-shadow: 0 24px 80px -32px rgba(0, 0, 0, 0.75);
+  --auth-radial: radial-gradient(ellipse 70% 50% at 78% 18%, color-mix(in oklab, var(--brand-primary) 14%, transparent), transparent 55%),
+    radial-gradient(ellipse 55% 42% at 18% 82%, color-mix(in oklab, var(--brand-secondary) 10%, transparent), transparent 50%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-heading: var(--text-heading);
+  --color-fg-muted: var(--text-muted);
+  --color-fg-subtle: var(--text-subtle);
+  --color-primary: var(--brand-primary);
+  --color-primary-dark: var(--brand-primary-dark);
+  --color-secondary: var(--brand-secondary);
+  --color-secondary-light: var(--brand-secondary-light);
+  --color-accent: var(--brand-accent);
+  --color-border: var(--brand-border);
+  --color-muted: var(--brand-muted);
+  --color-surface: var(--brand-surface);
+  --color-elevated: var(--elevated);
+  --color-chrome: var(--chrome);
+  --color-chrome-hover: var(--chrome-hover);
+  --font-sans: var(--font-app-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-app-mono), ui-monospace, monospace;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Auth routes: kill double scrollbars (fixed shell + document). */
+html.auth-route-lock,
+html.auth-route-lock body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-feature-settings:
+      "kern" 1,
+      "liga" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--brand-primary) 22%, transparent);
+    color: var(--foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring-focus);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Dashboard / settings fields */
+  .ui-field {
+    @apply rounded-[10px] border bg-[var(--input-bg)] text-[13px] text-foreground outline-none transition-[border-color,box-shadow,background-color];
+    border-color: var(--input-border);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+  .ui-field::placeholder {
+    color: var(--text-muted);
+  }
+  .ui-field:focus {
+    border-color: color-mix(in oklab, var(--brand-primary) 40%, var(--input-border));
+    background: var(--chrome);
+    box-shadow: 0 0 0 3px rgba(0, 112, 118, 0.12);
+  }
+  html[data-theme="dark"] .ui-field:focus {
+    background: var(--chrome-hover);
+    box-shadow: 0 0 0 3px rgba(0, 112, 118, 0.2);
+  }
+
+  /* Auth card inputs — glass in dark, solid in light */
+  .ui-auth-field {
+    @apply w-full rounded-xl py-3 pl-11 pr-3.5 text-[15px] outline-none transition-[border-color,box-shadow,background-color] disabled:opacity-50;
+    border: 1px solid var(--auth-field-border, rgba(255, 255, 255, 0.12));
+    background: var(--auth-field-bg, rgba(255, 255, 255, 0.06));
+    color: var(--auth-field-fg, #ffffff);
+  }
+  .ui-auth-field::placeholder {
+    color: var(--auth-field-placeholder, var(--text-muted));
+  }
+  .ui-auth-field:focus {
+    border-color: color-mix(in oklab, var(--brand-primary) 45%, transparent);
+    background: var(--auth-field-bg-focus, rgba(255, 255, 255, 0.08));
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-primary) 38%, transparent);
+  }
+
+  /* Matrix: horizontal scroll only — clip block overflow so thead can stick on page scroll */
+  .matrix-table-scroll {
+    overflow-x: auto;
+    overflow-y: clip;
+    overscroll-behavior-x: contain;
+  }
+
+  .auth-backdrop-base {
+    background: linear-gradient(165deg, #f0f4f8 0%, #e8eef5 42%, #dce3ec 100%);
+  }
+  html[data-theme="dark"] .auth-backdrop-base {
+    background: linear-gradient(165deg, #0b1220 0%, #0f172a 38%, #0a1628 100%);
+  }
+
+  .auth-panel {
+    border-radius: 1rem;
+    border: 1px solid var(--auth-panel-border);
+    background: var(--auth-panel-bg);
+    box-shadow: var(--auth-panel-shadow);
+    backdrop-filter: blur(20px);
+  }
+  @media (min-width: 1024px) {
+    .auth-panel {
+      border-radius: 1.5rem;
+    }
+  }
+}
+
+:root {
+  --auth-field-bg: rgba(255, 255, 255, 0.96);
+  --auth-field-bg-focus: #ffffff;
+  --auth-field-border: rgba(15, 23, 42, 0.14);
+  --auth-field-fg: #0f172a;
+  --auth-field-placeholder: #64748b;
+}
+
+html[data-theme="dark"] {
+  --auth-field-bg: rgba(255, 255, 255, 0.06);
+  --auth-field-bg-focus: rgba(255, 255, 255, 0.08);
+  --auth-field-border: rgba(255, 255, 255, 0.12);
+  --auth-field-fg: #ffffff;
+  --auth-field-placeholder: #94a3b8;
+}
