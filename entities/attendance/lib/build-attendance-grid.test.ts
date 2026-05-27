@@ -99,8 +99,7 @@ describe("buildAttendanceGrid work status", () => {
     expect(grid.rows[0]?.cells[19]).toBe("manual_present");
     expect(grid.rows[0]?.cellTitles?.[19]).toMatch(/Manual entry/i);
     expect(grid.rows[0]?.cellTitles?.[19]).toMatch(/Half day/i);
-    expect(grid.rows[0]?.cellTitles?.[19]).toContain("19:30");
-    expect(grid.rows[0]?.cellTitles?.[19]).toContain("10:30");
+    expect(grid.rows[0]?.cellTitles?.[19]).toMatch(/before shift end 19:30/i);
   });
 
   it("app punch (not manual) keeps half_day icon when rules say so", () => {

@@ -6,27 +6,33 @@ export type AttendanceRules = {
   firstHalfEnd: string;
   secondHalfStart: string;
   secondHalfEnd: string;
-  /** Min worked hours to count as half day when below full-day minimum */
+  absentAfterCheckIn: string;
+  halfDayCheckoutBefore: string;
   halfDayMaxHours: number;
-  /** Min worked hours (check-in→check-out) for full day present/late */
   minimumWorkingHours: number;
   weekOffDays: number[];
+  attendanceWeekStartDay: number;
   timezone?: string;
 };
 
-export const DEFAULT_ATTENDANCE_RULES: AttendanceRules = {
-  expectedCheckIn: "09:00",
-  expectedCheckOut: "18:00",
-  lateAfter: "09:30",
-  firstHalfStart: "09:00",
-  firstHalfEnd: "13:00",
-  secondHalfStart: "14:00",
-  secondHalfEnd: "18:00",
+export const DELTA_ATTENDANCE_PRESET: AttendanceRules = {
+  expectedCheckIn: "10:15",
+  expectedCheckOut: "19:30",
+  lateAfter: "10:30",
+  firstHalfStart: "10:15",
+  firstHalfEnd: "12:00",
+  secondHalfStart: "12:01",
+  secondHalfEnd: "14:00",
+  absentAfterCheckIn: "14:01",
+  halfDayCheckoutBefore: "15:00",
   halfDayMaxHours: 4,
   minimumWorkingHours: 9,
   weekOffDays: [0],
+  attendanceWeekStartDay: 1,
   timezone: "Asia/Kolkata",
 };
+
+export const DEFAULT_ATTENDANCE_RULES: AttendanceRules = { ...DELTA_ATTENDANCE_PRESET };
 
 function pickWorkingHours(value: unknown, fallback: number): number {
   const n = typeof value === "string" ? Number(value.trim()) : Number(value);
@@ -34,14 +40,16 @@ function pickWorkingHours(value: unknown, fallback: number): number {
   return Math.min(24, Math.round(n * 100) / 100);
 }
 
-function pickTime(
-  value: string | undefined,
-  fallback: string,
-): string {
+function pickTime(value: string | undefined, fallback: string): string {
   return value && /^\d{1,2}:\d{2}$/.test(value.trim()) ? value.trim() : fallback;
 }
 
-/** Legacy API/DB stored [0, 6]; company policy is Sunday-only unless HR picks more. */
+function pickWeekStart(value: unknown, fallback: number): number {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0 || n > 6) return fallback;
+  return Math.floor(n);
+}
+
 export function normalizeWeekOffDaysFromApi(
   days: number[] | undefined,
   fallback: number[],
@@ -67,9 +75,10 @@ const TIME_FIELDS = [
   "firstHalfEnd",
   "secondHalfStart",
   "secondHalfEnd",
+  "absentAfterCheckIn",
+  "halfDayCheckoutBefore",
 ] as const;
 
-/** Map API/DB payload to rules — no silent fallback to DEFAULT_ATTENDANCE_RULES. */
 export function normalizeAttendanceRules(
   raw: Partial<AttendanceRules> | null | undefined,
 ): AttendanceRules {
@@ -77,13 +86,16 @@ export function normalizeAttendanceRules(
     throw new AttendanceRulesError("Attendance rules are missing from the server.");
   }
 
+  const base = DELTA_ATTENDANCE_PRESET;
   const expectedCheckIn = pickTime(raw.expectedCheckIn, "");
   const expectedCheckOut = pickTime(raw.expectedCheckOut, "");
   const lateAfter = pickTime(raw.lateAfter, "");
   const firstHalfStart = pickTime(raw.firstHalfStart, raw.expectedCheckIn ?? "");
   const firstHalfEnd = pickTime(raw.firstHalfEnd, "");
   const secondHalfStart = pickTime(raw.secondHalfStart, "");
-  const secondHalfEnd = pickTime(raw.secondHalfEnd, raw.expectedCheckOut ?? "");
+  const secondHalfEnd = pickTime(raw.secondHalfEnd, "");
+  const absentAfterCheckIn = pickTime(raw.absentAfterCheckIn, "");
+  const halfDayCheckoutBefore = pickTime(raw.halfDayCheckoutBefore, "");
 
   const times: Record<string, string> = {
     expectedCheckIn,
@@ -93,11 +105,15 @@ export function normalizeAttendanceRules(
     firstHalfEnd,
     secondHalfStart,
     secondHalfEnd,
+    absentAfterCheckIn,
+    halfDayCheckoutBefore,
   };
 
   for (const key of TIME_FIELDS) {
     if (!times[key]) {
-      throw new AttendanceRulesError(`Attendance rules are incomplete: missing ${key}. Save rules in HR settings.`);
+      throw new AttendanceRulesError(
+        `Attendance rules are incomplete: missing ${key}. Save rules in HR settings.`,
+      );
     }
   }
 
@@ -109,12 +125,29 @@ export function normalizeAttendanceRules(
     firstHalfEnd,
     secondHalfStart,
     secondHalfEnd,
-    halfDayMaxHours: pickWorkingHours(raw.halfDayMaxHours, DEFAULT_ATTENDANCE_RULES.halfDayMaxHours),
+    absentAfterCheckIn,
+    halfDayCheckoutBefore,
+    halfDayMaxHours: pickWorkingHours(raw.halfDayMaxHours, base.halfDayMaxHours),
     minimumWorkingHours: pickWorkingHours(
       raw.minimumWorkingHours,
-      DEFAULT_ATTENDANCE_RULES.minimumWorkingHours,
+      base.minimumWorkingHours,
     ),
     weekOffDays: normalizeWeekOffDaysFromApi(raw.weekOffDays, [0]),
+    attendanceWeekStartDay: pickWeekStart(raw.attendanceWeekStartDay, base.attendanceWeekStartDay),
     timezone: raw.timezone?.trim() || "Asia/Kolkata",
   };
+}
+
+export function validateAttendanceRulesOrder(rules: AttendanceRules): string | null {
+  const toMins = (hm: string) => {
+    const [h, m] = hm.split(":").map(Number);
+    return h * 60 + m;
+  };
+  if (toMins(rules.lateAfter) < toMins(rules.expectedCheckIn)) {
+    return "Late-after must be at or after expected check-in.";
+  }
+  if (toMins(rules.absentAfterCheckIn) <= toMins(rules.secondHalfEnd)) {
+    return "Absent-after must be after second-half end.";
+  }
+  return null;
 }

@@ -74,12 +74,12 @@ const CONFIG: Record<AttendanceCellStatus, Config | null> = {
   campoff_earned: {
     Icon: Gift,
     className: "text-indigo-500 dark:text-indigo-400",
-    label: "Camp-off earned",
+    label: "Comp-off earned",
   },
   campoff_used: {
     Icon: CalendarCheck,
     className: "text-cyan-600 dark:text-cyan-400",
-    label: "Camp-off leave",
+    label: "Comp-off leave",
   },
   empty: {
     Icon: Circle,

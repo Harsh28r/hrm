@@ -34,8 +34,10 @@ export {
 export { mergeAttendanceRecords } from "@/entities/attendance/lib/merge-attendance-records";
 export {
   DEFAULT_ATTENDANCE_RULES,
+  DELTA_ATTENDANCE_PRESET,
   AttendanceRulesError,
   normalizeAttendanceRules,
+  validateAttendanceRulesOrder,
   type AttendanceRules,
 } from "@/entities/attendance/model/rules";
 export { fetchAttendanceRules, updateAttendanceRules } from "@/entities/attendance/api/rules-queries";
@@ -43,8 +45,12 @@ export { fetchCampOffMatrix, type CampOffMatrixUser } from "@/entities/attendanc
 export { mapDayTypeToCell } from "@/entities/attendance/lib/map-day-type";
 export {
   statusFromCheckInTime,
+  statusFromPunch,
   dayTypeFromCheckInTime,
   isLateCheckIn,
+  isEarlyCheckOut,
+  meetsExpectedShiftBounds,
+  shiftEndMinutesFromRules,
   combineDateAndTimeToIso,
 } from "@/entities/attendance/lib/time-rules";
 export type {

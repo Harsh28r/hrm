@@ -88,12 +88,29 @@ export function formatWeekOffDays(weekOffDays: number[]): string {
  * Status from check-in time only (check-out time does not downgrade present).
  * Uses company timezone from rules (default Asia/Kolkata).
  */
+function effectiveAbsentAfterMinutes(rules: AttendanceRules): number | null {
+  const explicit = minutesFromHm(rules.absentAfterCheckIn);
+  if (explicit != null) return explicit;
+  const secondEnd = minutesFromHm(rules.secondHalfEnd);
+  if (secondEnd == null) return null;
+  return secondEnd + 1;
+}
+
+function effectiveHalfDayCheckoutBeforeMinutes(rules: AttendanceRules): number | null {
+  const explicit = minutesFromHm(rules.halfDayCheckoutBefore);
+  if (explicit != null) return explicit;
+  return minutesFromHm("15:00");
+}
+
 export function statusFromCheckInTime(
   checkInIso: string,
   rules: AttendanceRules,
 ): AttendanceCellStatus {
   const checkInMins = clockMinutes(checkInIso, rules);
   if (checkInMins == null) return "half_day";
+
+  const absentAfter = effectiveAbsentAfterMinutes(rules);
+  if (absentAfter != null && checkInMins >= absentAfter) return "absent";
 
   const onTimeUntil = effectiveLateAfterMinutes(rules);
   const expectedIn = minutesFromHm(rules.expectedCheckIn);
@@ -198,25 +215,44 @@ function requiresWorkedHoursGate(rules: AttendanceRules): boolean {
   );
 }
 
+/** Shift end from saved attendance rules (`expectedCheckOut` HH:mm in company timezone). */
+export function shiftEndMinutesFromRules(rules: AttendanceRules): number | null {
+  return minutesFromHm(rules.expectedCheckOut);
+}
+
 /**
- * Full-day present/late also requires official shift bounds (when minimum hours are configured):
- * check-in not before expectedCheckIn, check-out not before expectedCheckOut.
+ * Check-out before `rules.expectedCheckOut` → not acceptable for full day.
+ * Early check-in is not evaluated here (allowed by check-in windows).
  */
+export function isEarlyCheckOut(
+  checkOutIso: string,
+  rules: AttendanceRules,
+): boolean {
+  const end = shiftEndMinutesFromRules(rules);
+  if (end == null) return false;
+  const outMins = clockMinutes(checkOutIso, rules);
+  if (outMins == null) return false;
+  return outMins < end;
+}
+
+/** Full day requires check-out at or after `rules.expectedCheckOut` when configured. */
 export function meetsExpectedShiftBounds(
   checkInIso: string,
   checkOutIso: string | null | undefined,
   rules: AttendanceRules,
 ): boolean {
+  void checkInIso;
   if (!checkOutIso) return false;
-  const inMins = clockMinutes(checkInIso, rules);
-  const outMins = clockMinutes(checkOutIso, rules);
-  if (inMins == null || outMins == null) return false;
+  return !isEarlyCheckOut(checkOutIso, rules);
+}
 
-  const expectedIn = minutesFromHm(rules.expectedCheckIn);
-  const expectedOut = minutesFromHm(rules.expectedCheckOut);
-  if (expectedIn != null && inMins < expectedIn) return false;
-  if (expectedOut != null && outMins < expectedOut) return false;
-  return true;
+/** Applies `rules.expectedCheckOut` after worked-hours gate — all values from attendance rules config. */
+function isHalfDayEarlyCheckOut(checkOutIso: string, rules: AttendanceRules): boolean {
+  const threshold = effectiveHalfDayCheckoutBeforeMinutes(rules);
+  if (threshold == null) return false;
+  const outMins = clockMinutes(checkOutIso, rules);
+  if (outMins == null) return false;
+  return outMins < threshold;
 }
 
 function applyExpectedShiftBounds(
@@ -225,8 +261,11 @@ function applyExpectedShiftBounds(
   checkOutIso: string | null | undefined,
   rules: AttendanceRules,
 ): AttendanceCellStatus {
+  void checkInIso;
   if (status !== "present" && status !== "late") return status;
-  if (workingHoursThreshold(rules.minimumWorkingHours) == null) return status;
+  if (!checkOutIso) return status;
+  if (isHalfDayEarlyCheckOut(checkOutIso, rules)) return "half_day";
+  if (shiftEndMinutesFromRules(rules) == null) return status;
   if (meetsExpectedShiftBounds(checkInIso, checkOutIso, rules)) return status;
   return "half_day";
 }
@@ -242,6 +281,7 @@ export function statusFromPunch(
   },
 ): AttendanceCellStatus {
   const base = statusFromCheckInTime(checkInIso, rules);
+  if (base === "absent") return "absent";
   const hasCheckout = Boolean(options?.checkOutIso);
   const gate = requiresWorkedHoursGate(rules);
 
@@ -270,8 +310,9 @@ export function dayTypeFromCheckInTime(
   checkInIso: string,
   rules: AttendanceRules,
   options?: { checkOutIso?: string | null; totalHours?: number | null },
-): "present" | "late" | "half_day" {
+): "present" | "late" | "half_day" | "absent" {
   const status = statusFromPunch(checkInIso, rules, options);
+  if (status === "absent") return "absent";
   if (status === "late") return "late";
   if (status === "half_day") return "half_day";
   return "present";

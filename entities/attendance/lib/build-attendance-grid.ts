@@ -65,13 +65,13 @@ function resolveCellStatus(
   const fromPunch = punch ? cellStatusFromPunch(punch, rules) : null;
 
   if (summaryStatus === "campoff_used") {
-    return { status: "campoff_used" };
+    return { status: "campoff_used", title: "Comp-off leave (approved)" };
   }
   if (summaryStatus === "campoff_earned") {
     if (scheduledOff) {
       return {
         status: "campoff_earned",
-        title: `Worked on week off (${formatWeekOffDays(weekOffDays)}) — camp-off earned`,
+        title: `Worked on week off (${formatWeekOffDays(weekOffDays)}) — comp-off earned`,
       };
     }
     if (fromPunch) return { status: fromPunch };
@@ -87,7 +87,7 @@ function resolveCellStatus(
     if (fromPunch || punch?.checkInTime) {
       return {
         status: "campoff_earned",
-        title: `Worked on week off (${formatWeekOffDays(weekOffDays)}) — camp-off earned`,
+        title: `Worked on week off (${formatWeekOffDays(weekOffDays)}) — comp-off earned`,
       };
     }
     return { status: "weekoff", title: `Week off (${formatWeekOffDays(weekOffDays)})` };

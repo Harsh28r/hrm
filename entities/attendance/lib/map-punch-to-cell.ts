@@ -2,7 +2,7 @@ import type { AttendanceCellStatus } from "@/entities/attendance/model/grid";
 import type { AttendanceRules } from "@/entities/attendance/model/rules";
 import { calendarPartsInTz } from "@/entities/attendance/lib/time-parse";
 import {
-  minutesFromHm,
+  isEarlyCheckOut,
   minutesFromIsoInTz,
   resolveWorkedHours,
   statusFromCheckInTime,
@@ -102,21 +102,10 @@ function halfDayReasonsFromRules(
     }
   }
 
-  if (punch.checkInTime && punch.checkOutTime) {
-    const inMins = minutesFromIsoInTz(punch.checkInTime, tz);
-    const outMins = minutesFromIsoInTz(punch.checkOutTime, tz);
-    const expectedIn = minutesFromHm(rules.expectedCheckIn);
-    const expectedOut = minutesFromHm(rules.expectedCheckOut);
-    if (expectedIn != null && inMins != null && inMins < expectedIn) {
-      reasons.push(
-        `check-in ${formatClockInTz(punch.checkInTime, tz)} before shift start ${rules.expectedCheckIn}`,
-      );
-    }
-    if (expectedOut != null && outMins != null && outMins < expectedOut) {
-      reasons.push(
-        `check-out ${formatClockInTz(punch.checkOutTime, tz)} before shift end ${rules.expectedCheckOut}`,
-      );
-    }
+  if (punch.checkOutTime && isEarlyCheckOut(punch.checkOutTime, rules)) {
+    reasons.push(
+      `check-out ${formatClockInTz(punch.checkOutTime, tz)} before shift end ${rules.expectedCheckOut}`,
+    );
   }
 
   return reasons;

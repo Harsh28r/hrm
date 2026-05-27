@@ -23,7 +23,7 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
   paid: "Paid leave",
   sick: "Sick leave",
   unpaid: "Unpaid leave",
-  campoff: "Camp-off leave",
+  campoff: "Comp-off leave",
 };
 
 /** Approved leave days in a month (IST calendar), keyed `userId|dayOfMonth`. */

@@ -6,12 +6,15 @@ import { useCallback, useEffect, useState } from "react";
 import { en } from "@/shared/i18n";
 import { isApiConfigured } from "@/shared/config";
 import {
+  DELTA_ATTENDANCE_PRESET,
   normalizeAttendanceRules,
   updateAttendanceRules,
+  validateAttendanceRulesOrder,
   type AttendanceRules,
 } from "@/entities/attendance";
 import { useAttendanceRules } from "@/features/attendance";
 import { AttendanceStatusIcon } from "@/widgets/employee-attendance/ui/attendance-status-icon";
+import { BulkWeekOffAssign } from "@/widgets/attendance-rules/ui/bulk-week-off-assign";
 import type { AttendanceCellStatus } from "@/entities/attendance/model/grid";
 
 const WEEK_DAYS: { value: number; label: string }[] = [
@@ -57,6 +60,7 @@ const STATUS_RULES: {
         .replace("{late}", r.lateAfter)
         .replace("{expectedIn}", r.expectedCheckIn)
         .replace("{expectedOut}", r.expectedCheckOut)
+        .replace("{halfDayOut}", r.halfDayCheckoutBefore)
         .replace("{minHours}", String(r.minimumWorkingHours)),
   },
   {
@@ -77,13 +81,15 @@ const STATUS_RULES: {
         .replace("{firstEnd}", r.firstHalfEnd)
         .replace("{secondStart}", r.secondHalfStart)
         .replace("{secondEnd}", r.secondHalfEnd)
+        .replace("{expectedOut}", r.expectedCheckOut)
+        .replace("{halfDayOut}", r.halfDayCheckoutBefore)
         .replace("{fullHours}", String(r.minimumWorkingHours))
         .replace("{halfHours}", String(r.halfDayMaxHours)),
   },
   {
     status: "absent",
     title: en.attendance.rules.statusAbsent,
-    rule: () => en.attendance.rules.ruleAbsent,
+    rule: (r) => en.attendance.rules.ruleAbsent.replace("{absentAfter}", r.absentAfterCheckIn),
   },
   {
     status: "on_leave",
@@ -171,6 +177,11 @@ export function AttendanceRulesView() {
       setError("Half day minimum hours cannot exceed full day minimum hours.");
       return;
     }
+    const orderErr = validateAttendanceRulesOrder(rules);
+    if (orderErr) {
+      setError(orderErr);
+      return;
+    }
     setSaving(true);
     setError(null);
     setSaved(false);
@@ -222,19 +233,32 @@ export function AttendanceRulesView() {
             {en.attendance.rules.subtitle}
           </p>
         </div>
-        <button
-          type="button"
-          disabled={saving || loading || !apiReady}
-          onClick={() => void save()}
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-[10px] bg-primary px-5 text-[13px] font-semibold text-white shadow-[0_8px_24px_-8px_rgba(0,112,118,0.45)] transition-[opacity,transform] hover:bg-primary/95 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-        >
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={saving || loading || !apiReady}
+            onClick={() => {
+              setRules({ ...DELTA_ATTENDANCE_PRESET });
+              setSaved(false);
+            }}
+            className="inline-flex h-11 items-center justify-center rounded-[10px] border border-border/90 px-4 text-[13px] font-semibold text-heading hover:bg-chrome/60"
+          >
+            {en.attendance.rules.applyDeltaPreset}
+          </button>
+          <button
+            type="button"
+            disabled={saving || loading || !apiReady}
+            onClick={() => void save()}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-primary px-5 text-[13px] font-semibold text-white shadow-[0_8px_24px_-8px_rgba(0,112,118,0.45)] transition-[opacity,transform] hover:bg-primary/95 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+          >
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
           ) : (
             <Save className="h-4 w-4" strokeWidth={2} aria-hidden />
           )}
           {saving ? en.attendance.rules.saving : en.attendance.rules.save}
-        </button>
+          </button>
+        </div>
       </header>
 
       {!apiReady ? (
@@ -263,7 +287,7 @@ export function AttendanceRulesView() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:items-start">
         <section className="rounded-[14px] border border-border/90 bg-surface p-5 shadow-[var(--shadow-card)] sm:p-6">
           <div className="border-b border-border/90 pb-4">
-            <h2 className="text-[16px] font-semibold text-heading">{en.attendance.rules.shiftTitle}</h2>
+            <h2 className="text-[16px] font-semibold text-heading">{en.attendance.rules.checkInPolicyTitle}</h2>
             <p className="mt-1 text-[13px] leading-relaxed text-fg-muted">{en.attendance.rules.shiftHint}</p>
           </div>
 
@@ -285,24 +309,24 @@ export function AttendanceRulesView() {
                   />
                 </label>
                 <label className={fieldLabel}>
-                  {en.attendance.rules.expectedCheckOut}
-                  <input
-                    type="time"
-                    value={rules.expectedCheckOut}
-                    onChange={(e) => {
-                      setRules((r) => (r ? { ...r, expectedCheckOut: e.target.value } : r));
-                      setSaved(false);
-                    }}
-                    className="ui-field h-11 w-full normal-case tracking-normal"
-                  />
-                </label>
-                <label className={fieldLabel}>
                   {en.attendance.rules.lateAfter}
                   <input
                     type="time"
                     value={rules.lateAfter}
                     onChange={(e) => {
                       setRules((r) => (r ? { ...r, lateAfter: e.target.value } : r));
+                      setSaved(false);
+                    }}
+                    className="ui-field h-11 w-full normal-case tracking-normal"
+                  />
+                </label>
+                <label className={fieldLabel}>
+                  {en.attendance.rules.absentAfterCheckIn}
+                  <input
+                    type="time"
+                    value={rules.absentAfterCheckIn}
+                    onChange={(e) => {
+                      setRules((r) => (r ? { ...r, absentAfterCheckIn: e.target.value } : r));
                       setSaved(false);
                     }}
                     className="ui-field h-11 w-full normal-case tracking-normal"
@@ -414,6 +438,73 @@ export function AttendanceRulesView() {
               </div>
 
               <div className="mt-8 border-t border-border/90 pt-6">
+                <h3 className="text-[14px] font-semibold text-heading">
+                  {en.attendance.rules.checkOutPolicyTitle}
+                </h3>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <label className={fieldLabel}>
+                    {en.attendance.rules.halfDayCheckoutBefore}
+                    <input
+                      type="time"
+                      value={rules.halfDayCheckoutBefore}
+                      onChange={(e) => {
+                        setRules((r) =>
+                          r ? { ...r, halfDayCheckoutBefore: e.target.value } : r,
+                        );
+                        setSaved(false);
+                      }}
+                      className="ui-field h-11 w-full normal-case tracking-normal"
+                    />
+                  </label>
+                  <div>
+                    <label className={fieldLabel}>
+                      {en.attendance.rules.expectedCheckOut}
+                      <input
+                        type="time"
+                        value={rules.expectedCheckOut}
+                        onChange={(e) => {
+                          setRules((r) => (r ? { ...r, expectedCheckOut: e.target.value } : r));
+                          setSaved(false);
+                        }}
+                        className="ui-field h-11 w-full normal-case tracking-normal"
+                      />
+                    </label>
+                    <p className="mt-2 text-[12px] leading-relaxed text-fg-muted">
+                      {en.attendance.rules.expectedCheckOutHint.replace(
+                        "{halfDayOut}",
+                        rules.halfDayCheckoutBefore,
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 border-t border-border/90 pt-6">
+                <label className={fieldLabel}>
+                  {en.attendance.rules.attendanceWeekStartDay}
+                  <select
+                    value={rules.attendanceWeekStartDay}
+                    onChange={(e) => {
+                      setRules((r) =>
+                        r ? { ...r, attendanceWeekStartDay: Number(e.target.value) } : r,
+                      );
+                      setSaved(false);
+                    }}
+                    className="ui-field h-11 w-full normal-case tracking-normal"
+                  >
+                    {WEEK_DAYS.map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="mt-2 text-[12px] leading-relaxed text-fg-muted">
+                  {en.attendance.rules.attendanceWeekHint}
+                </p>
+              </div>
+
+              <div className="mt-8 border-t border-border/90 pt-6">
                 <p className={fieldLabel}>{en.attendance.rules.weekOffTitle}</p>
                 <p className="mt-1 text-[12px] leading-relaxed text-fg-muted">
                   {en.attendance.rules.weekOffCompanyHint}
@@ -439,6 +530,8 @@ export function AttendanceRulesView() {
                   })}
                 </div>
               </div>
+
+              <BulkWeekOffAssign />
             </>
           )}
 

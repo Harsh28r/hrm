@@ -24,6 +24,8 @@ export type LeaveRequest = {
     comment?: string;
     at: string;
   }>;
+  employeeProjects?: Array<{ id: string; name: string }>;
+  primaryProjectName?: string | null;
 };
 
 export type LeaveListTab =
@@ -33,12 +35,30 @@ export type LeaveListTab =
   | "approved"
   | "rejected";
 
+export type LeaveRequestFilters = {
+  projectId?: string;
+};
+
 export function fetchHrLeaveApprovals() {
   return hrmBffFetch<{ data: LeaveRequest[] }>("leave/approvals/hr");
 }
 
-export function fetchLeaveRequests(status: LeaveListTab | string = "all") {
-  const q = status === "pending_hr" ? "leave/approvals/hr" : `leave/requests?status=${encodeURIComponent(status)}`;
+export function fetchLeaveRequests(
+  status: LeaveListTab | string = "all",
+  filters: LeaveRequestFilters = {},
+) {
+  const isPendingHr = status === "pending_hr";
+  const params = new URLSearchParams();
+  if (!isPendingHr) {
+    params.set("status", String(status));
+  }
+  if (filters.projectId) {
+    params.set("projectId", filters.projectId);
+  }
+  const query = params.toString();
+  const q = isPendingHr
+    ? `leave/approvals/hr${query ? `?${query}` : ""}`
+    : `leave/requests${query ? `?${query}` : ""}`;
   return hrmBffFetch<{ data: LeaveRequest[] }>(q);
 }
 
@@ -54,6 +74,35 @@ export function hrRejectLeave(id: string, comment?: string) {
     method: "POST",
     body: JSON.stringify({ comment }),
   });
+}
+
+export type BulkLeaveActionResult = {
+  id: string;
+  ok: boolean;
+  error?: string;
+};
+
+export async function hrBulkLeaveAction(
+  ids: string[],
+  action: "approve" | "reject",
+  comment?: string,
+): Promise<BulkLeaveActionResult[]> {
+  const fn = action === "approve" ? hrApproveLeave : hrRejectLeave;
+  const results = await Promise.all(
+    ids.map(async (id) => {
+      try {
+        await fn(id, comment);
+        return { id, ok: true as const };
+      } catch (e) {
+        return {
+          id,
+          ok: false as const,
+          error: e instanceof Error ? e.message : "Failed",
+        };
+      }
+    }),
+  );
+  return results;
 }
 
 export type AuditEntry = {

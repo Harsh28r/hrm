@@ -51,5 +51,13 @@ export async function parseErrorResponse(res: Response): Promise<ApiError> {
     // ignore parse failures
   }
 
+  if (
+    status === 404 &&
+    (message.includes("Cannot GET") || message.includes("Cannot POST"))
+  ) {
+    message =
+      "HRM API route not found (404). Point NEXT_PUBLIC_API_BASE_URL to local deltadb (http://localhost:5000) or deploy latest deltadb to production.";
+  }
+
   return new ApiError(message, status, { code, body });
 }

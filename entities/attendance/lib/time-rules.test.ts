@@ -82,7 +82,7 @@ describe("statusFromCheckInTime (IST)", () => {
     expect(statusFromCheckInTime(atIst(10, 20), shift)).toBe("present");
   });
 
-  it("present needs shift bounds + hours (not early in / early out)", () => {
+  it("early check-in is ok; early check-out before shift end is half_day", () => {
     const shift = {
       ...rules,
       expectedCheckIn: "10:30",
@@ -98,6 +98,12 @@ describe("statusFromCheckInTime (IST)", () => {
     expect(
       statusFromPunch(atIst(10, 20), shift, {
         checkOutIso: atIst(19, 49),
+        totalHours: 9.5,
+      }),
+    ).toBe("present");
+    expect(
+      statusFromPunch(atIst(10, 30), shift, {
+        checkOutIso: atIst(18, 0),
         totalHours: 9.5,
       }),
     ).toBe("half_day");
@@ -147,7 +153,29 @@ describe("statusFromCheckInTime (IST)", () => {
     ).toBe("half_day");
   });
 
-  it("9h span but early in (9:00) and early out (18:00) vs 10:30–19:30 shift is half_day", () => {
+  it("early check-out uses expectedCheckOut from saved rules", () => {
+    const shift17 = {
+      ...rules,
+      expectedCheckIn: "10:30",
+      expectedCheckOut: "17:00",
+      minimumWorkingHours: 8,
+    };
+    expect(
+      statusFromPunch(atIst(10, 30), shift17, {
+        checkOutIso: atIst(18, 0),
+        totalHours: 8,
+      }),
+    ).toBe("present");
+    const shift19 = { ...shift17, expectedCheckOut: "19:30" };
+    expect(
+      statusFromPunch(atIst(10, 30), shift19, {
+        checkOutIso: atIst(18, 0),
+        totalHours: 8,
+      }),
+    ).toBe("half_day");
+  });
+
+  it("early in (9:00) allowed; early out (18:00) before 19:30 is half_day", () => {
     const shift = {
       ...rules,
       expectedCheckIn: "10:30",
@@ -165,6 +193,12 @@ describe("statusFromCheckInTime (IST)", () => {
         totalHours: 9,
       }),
     ).toBe("half_day");
+    expect(
+      statusFromPunch(atIst(9, 0), shift, {
+        checkOutIso: atIst(19, 30),
+        totalHours: 9,
+      }),
+    ).toBe("present");
     expect(
       statusFromPunch(atIst(10, 30), shift, {
         checkOutIso: atIst(19, 30),

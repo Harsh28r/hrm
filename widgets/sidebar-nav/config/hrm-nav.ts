@@ -44,6 +44,11 @@ export const hrmNavItems: NavItemConfig[] = [
       { id: "attendance-overview", href: "/attendance", label: en.nav.attendanceOverview },
       { id: "attendance-manual-entry", href: "/attendance/manual-entry", label: en.nav.attendanceManualEntry },
       { id: "attendance-rules", href: "/attendance/rules", label: en.nav.attendanceRules },
+      {
+        id: "attendance-week-off-swaps",
+        href: "/attendance/week-off-swaps",
+        label: en.nav.attendanceWeekOffSwaps,
+      },
     ],
   },
   {

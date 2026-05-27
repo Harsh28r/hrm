@@ -4,7 +4,7 @@ import { formatWeekOffDays, isWeekOffDay } from "@/entities/attendance/lib/time-
 
 const WORK_STATUSES: AttendanceCellStatus[] = ["present", "late", "half_day", "manual_present"];
 
-/** Camp-off: earn on scheduled week-off work; use only on approved camp-off leave days. */
+/** Comp-off: earn on scheduled week-off work; use only on approved comp-off leave days. */
 export function applyCampOffToGridRow(
   row: AttendanceGridRow,
   year: number,
@@ -30,22 +30,22 @@ export function applyCampOffToGridRow(
 
     if (workedOnScheduledOff || (scheduledOff && status === "campoff_earned")) {
       const credited = creditedSet.has(day);
-      const campNote = credited
-        ? `Worked on week off (${offLabel}) — camp-off +1`
-        : `Worked on week off (${offLabel}) — camp-off earned`;
+      const compOffNote = credited
+        ? `Worked on week off (${offLabel}) — comp-off +1`
+        : `Worked on week off (${offLabel}) — comp-off earned`;
       if (status === "manual_present") {
         const prev = cellTitles[day];
-        cellTitles[day] = prev ? `${prev} · ${campNote}` : campNote;
+        cellTitles[day] = prev ? `${prev} · ${compOffNote}` : compOffNote;
         continue;
       }
       cells[day] = "campoff_earned";
-      cellTitles[day] = campNote;
+      cellTitles[day] = compOffNote;
       continue;
     }
 
     if (leaveSet.has(day)) {
       cells[day] = "campoff_used";
-      cellTitles[day] = "Camp-off leave (approved)";
+      cellTitles[day] = "Comp-off leave (approved)";
       continue;
     }
   }

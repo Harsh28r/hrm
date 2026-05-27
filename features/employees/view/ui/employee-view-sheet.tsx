@@ -163,7 +163,7 @@ export function EmployeeViewSheet({ id }: { id: string }) {
         <h2 className="text-xl font-semibold">{user?.name || "Employee"}</h2>
         <p className="text-sm text-muted">{user?.email}</p>
         <p className="mt-2 text-[13px] text-fg-muted">
-          Camp-off balance: <span className="font-semibold text-heading">{campOffBalance}</span> day
+          Comp-off balance: <span className="font-semibold text-heading">{campOffBalance}</span> day
           {campOffBalance === 1 ? "" : "s"} available
         </p>
       </div>
@@ -234,8 +234,10 @@ export function EmployeeViewSheet({ id }: { id: string }) {
       <section className="rounded-[12px] border border-border/90 bg-chrome/40 p-4">
         <h3 className="text-[15px] font-semibold text-heading">Scheduled week off</h3>
         <p className="mt-1 text-[13px] leading-relaxed text-fg-muted">
-          Company default is <strong className="text-heading">{formatWeekOffDays(companyWeekOff)}</strong>.
-          Working on those days earns camp-off. Saturday is a normal working day unless you set a custom
+          Official company week-off (from Attendance rules) is{" "}
+          <strong className="text-heading">{formatWeekOffDays(companyWeekOff)}</strong>. HR sets per-employee
+          overrides below.
+          Working on those days earns comp-off. Saturday is a normal working day unless you set a custom
           schedule below.
         </p>
 
@@ -246,7 +248,7 @@ export function EmployeeViewSheet({ id }: { id: string }) {
             onChange={(e) => setUseCompanyWeekOff(e.target.checked)}
             className="h-4 w-4 rounded border-border text-primary"
           />
-          Use company default ({formatWeekOffDays(companyWeekOff)})
+          Use company default — {formatWeekOffDays(companyWeekOff)} (HR only)
         </label>
 
         {!useCompanyWeekOff ? (
